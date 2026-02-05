@@ -387,6 +387,135 @@
       }
     }
 
+    /* ============ VALENTINE QUESTION SCREEN ============ */
+    .valentine-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 150;
+      background: radial-gradient(ellipse at center, #1a0a0a 0%, var(--bg-dark) 70%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+
+    .valentine-screen.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .valentine-content {
+      text-align: center;
+      animation: valentinePop 0.8s ease;
+    }
+
+    @keyframes valentinePop {
+      0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .valentine-heart {
+      font-size: 80px;
+      animation: heartBeat 1.2s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes heartBeat {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.1); }
+      50% { transform: scale(1); }
+      75% { transform: scale(1.15); }
+    }
+
+    .valentine-question {
+      font-family: var(--font-display);
+      font-size: clamp(36px, 8vw, 64px);
+      color: var(--text);
+      margin-bottom: 16px;
+      letter-spacing: 2px;
+    }
+
+    .valentine-subtext {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      font-weight: 300;
+    }
+
+    .valentine-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-yes {
+      background: linear-gradient(135deg, var(--red), var(--pink));
+      color: white;
+      padding: 16px 48px;
+      font-size: 20px;
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px var(--red-glow);
+    }
+
+    .btn-yes:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 30px var(--red-glow);
+    }
+
+    .btn-no {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      padding: 16px 48px;
+      font-size: 20px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .btn-no.running {
+      position: fixed;
+      z-index: 200;
+    }
+
+    .btn-no:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .valentine-response {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+      margin-top: 30px;
+    }
+
+    .valentine-response.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .valentine-response-text {
+      font-size: 24px;
+      color: var(--pink-light);
+      font-weight: 500;
+    }
+
     /* ============ MAIN CONTENT ============ */
     .main-screen {
       position: fixed;
@@ -926,6 +1055,22 @@
     </div>
   </div>
 
+  <!-- ============ VALENTINE QUESTION ============ -->
+  <div class="valentine-screen" id="valentineScreen">
+    <div class="valentine-content">
+      <div class="valentine-heart">💝</div>
+      <h1 class="valentine-question">Will You Be My Valentine?</h1>
+      <p class="valentine-subtext">I have something special to show you...</p>
+      <div class="valentine-buttons">
+        <button class="btn-yes" id="btnYes">Yes! 💕</button>
+        <button class="btn-no" id="btnNo">No</button>
+      </div>
+      <div class="valentine-response" id="valentineResponse">
+        <p class="valentine-response-text">I knew you'd say yes! 🥰</p>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ MAIN CONTENT ============ -->
   <div class="main-screen" id="mainScreen">
     <header class="header" id="header">
@@ -1114,28 +1259,104 @@
     // ============ PROFILE SELECTION ============
     var profileScreen = document.getElementById('profileScreen');
     var mainScreen = document.getElementById('mainScreen');
+    var valentineScreen = document.getElementById('valentineScreen');
     var coupleProfile = document.getElementById('coupleProfile');
     var backBtn = document.getElementById('backBtn');
+    var btnYes = document.getElementById('btnYes');
+    var btnNo = document.getElementById('btnNo');
+    var valentineResponse = document.getElementById('valentineResponse');
 
+    // Step 1: Profile click -> Show Valentine question
     coupleProfile.addEventListener('click', function () {
       profileScreen.style.opacity = '0';
       setTimeout(function () {
         profileScreen.style.display = 'none';
-        mainScreen.classList.add('active');
-        celebrate();
-
-        // Start music on first interaction
-        var bgMusic = document.getElementById('bgMusic');
-        bgMusic.volume = 0.5;
-        bgMusic.play().catch(function (e) { console.log("Auto-play blocked:", e); });
-
-        // Update music icon state
-        var musicToggle = document.getElementById('musicToggle');
-        musicToggle.innerHTML = '<i data-lucide="pause" style="width: 18px; height: 18px;"></i>';
-        musicToggle.style.color = 'var(--red)';
-        isPlaying = true;
-        lucide.createIcons();
+        valentineScreen.classList.add('active');
       }, 500);
+    });
+
+    // Step 2: "Yes" button -> Show response, then main content
+    btnYes.addEventListener('click', function () {
+      valentineResponse.classList.add('show');
+      celebrate();
+
+      setTimeout(function () {
+        valentineScreen.style.opacity = '0';
+        setTimeout(function () {
+          valentineScreen.classList.remove('active');
+          valentineScreen.style.opacity = '';
+          mainScreen.classList.add('active');
+          celebrate();
+
+          // Start music
+          var bgMusic = document.getElementById('bgMusic');
+          bgMusic.volume = 0.5;
+          bgMusic.play().catch(function (e) { console.log("Auto-play blocked:", e); });
+
+          // Update music icon state
+          updateMusicIcon(true);
+        }, 600);
+      }, 1500);
+    });
+
+    // Helper to update music icon safely
+    function updateMusicIcon(playing) {
+      var musicToggle = document.getElementById('musicToggle');
+      musicToggle.textContent = '';
+      var icon = document.createElement('i');
+      icon.setAttribute('data-lucide', playing ? 'pause' : 'music');
+      icon.style.width = '18px';
+      icon.style.height = '18px';
+      musicToggle.appendChild(icon);
+      musicToggle.style.color = playing ? 'var(--red)' : 'white';
+      isPlaying = playing;
+      lucide.createIcons();
+    }
+
+    // Step 3: "No" button runs away when hovered!
+    var noMessages = [
+      "Are you sure? 🥺",
+      "Think again! 💭",
+      "Please? 🙏",
+      "Pretty please? 🥹",
+      "I'll be sad... 😢",
+      "Catch me if you can! 😜",
+      "Nope, try again! 💨",
+      "Too slow! 😎"
+    ];
+    var noMsgIndex = 0;
+
+    btnNo.addEventListener('mouseenter', function () {
+      // Add running class to switch to fixed positioning
+      btnNo.classList.add('running');
+
+      // Get viewport bounds
+      var maxX = window.innerWidth - btnNo.offsetWidth - 20;
+      var maxY = window.innerHeight - btnNo.offsetHeight - 20;
+
+      // Random new position (keep away from edges)
+      var newX = 50 + Math.random() * (maxX - 100);
+      var newY = 50 + Math.random() * (maxY - 100);
+
+      // Move the button
+      btnNo.style.left = newX + 'px';
+      btnNo.style.top = newY + 'px';
+
+      // Change text
+      btnNo.textContent = noMessages[noMsgIndex % noMessages.length];
+      noMsgIndex++;
+    });
+
+    // Also handle touch for mobile
+    btnNo.addEventListener('touchstart', function (e) {
+      e.preventDefault();
+      btnNo.classList.add('running');
+      var maxX = window.innerWidth - btnNo.offsetWidth - 20;
+      var maxY = window.innerHeight - btnNo.offsetHeight - 20;
+      btnNo.style.left = (50 + Math.random() * (maxX - 100)) + 'px';
+      btnNo.style.top = (50 + Math.random() * (maxY - 100)) + 'px';
+      btnNo.textContent = noMessages[noMsgIndex % noMessages.length];
+      noMsgIndex++;
     });
 
     backBtn.addEventListener('click', function () {
@@ -1311,15 +1532,11 @@
     musicToggle.addEventListener('click', function () {
       if (isPlaying) {
         bgMusic.pause();
-        musicToggle.innerHTML = '<i data-lucide="music" style="width: 18px; height: 18px;"></i>';
-        musicToggle.style.color = 'white';
+        updateMusicIcon(false);
       } else {
-        bgMusic.play().catch(e => console.log("Audio play failed:", e));
-        musicToggle.innerHTML = '<i data-lucide="pause" style="width: 18px; height: 18px;"></i>';
-        musicToggle.style.color = 'var(--red)';
+        bgMusic.play().catch(function(e) { console.log("Audio play failed:", e); });
+        updateMusicIcon(true);
       }
-      isPlaying = !isPlaying;
-      lucide.createIcons();
     });
 
     // ============ KEYBOARD ACCESS ============
