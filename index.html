@@ -15,8 +15,8 @@
   <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-  <!-- Lucide Icons (for UI icons) -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide Icons (for UI icons) - pinned version -->
+  <script src="https://unpkg.com/lucide@0.294.0/dist/umd/lucide.min.js"></script>
 
   <style>
     :root {
@@ -1217,6 +1217,11 @@
       ]
     };
 
+    // ============ GLOBAL STATE ============
+    var isPlaying = false;
+    var bgMusic = null;
+    var musicToggle = null;
+
     // ============ FLOATING HEARTS ============
     var heartsContainer = document.getElementById('floatingHearts');
     var heartEmojis = ['❤️', '💕', '💖', '💗', '🩷'];
@@ -1347,17 +1352,21 @@
       noMsgIndex++;
     });
 
-    // Also handle touch for mobile
+    // Also handle touch for mobile with improved responsiveness
     btnNo.addEventListener('touchstart', function (e) {
       e.preventDefault();
       btnNo.classList.add('running');
-      var maxX = window.innerWidth - btnNo.offsetWidth - 20;
-      var maxY = window.innerHeight - btnNo.offsetHeight - 20;
-      btnNo.style.left = (50 + Math.random() * (maxX - 100)) + 'px';
-      btnNo.style.top = (50 + Math.random() * (maxY - 100)) + 'px';
-      btnNo.textContent = noMessages[noMsgIndex % noMessages.length];
-      noMsgIndex++;
-    });
+
+      // Use requestAnimationFrame for smoother repositioning
+      requestAnimationFrame(function() {
+        var maxX = window.innerWidth - btnNo.offsetWidth - 20;
+        var maxY = window.innerHeight - btnNo.offsetHeight - 20;
+        btnNo.style.left = (50 + Math.random() * (maxX - 100)) + 'px';
+        btnNo.style.top = (50 + Math.random() * (maxY - 100)) + 'px';
+        btnNo.textContent = noMessages[noMsgIndex % noMessages.length];
+        noMsgIndex++;
+      });
+    }, { passive: false });
 
     backBtn.addEventListener('click', function () {
       mainScreen.classList.remove('active');
@@ -1389,8 +1398,20 @@
 
     document.getElementById('heroDescription').textContent = CONFIG.tagline;
 
-    // Hero media (video or image)
+    // Hero media (video or image) with fallback
     var heroMedia = document.getElementById('heroMedia');
+
+    function showHeroImage() {
+      heroMedia.textContent = '';
+      if (CONFIG.heroImage) {
+        var img = document.createElement('img');
+        img.className = 'hero-image';
+        img.src = CONFIG.heroImage;
+        img.alt = 'Our love story';
+        heroMedia.appendChild(img);
+      }
+    }
+
     if (CONFIG.heroVideo) {
       heroMedia.textContent = '';
       var video = document.createElement('video');
@@ -1400,15 +1421,12 @@
       video.muted = true;
       video.loop = true;
       video.playsInline = true;
-      video.style.objectPosition = CONFIG.videoPosition || "center center"; // Apply video positioning
+      video.style.objectPosition = CONFIG.videoPosition || "center center";
+      // Fallback to image if video fails to load
+      video.onerror = showHeroImage;
       heroMedia.appendChild(video);
-    } else if (CONFIG.heroImage) {
-      heroMedia.textContent = '';
-      var img = document.createElement('img');
-      img.className = 'hero-image';
-      img.src = CONFIG.heroImage;
-      img.alt = 'Our love story';
-      heroMedia.appendChild(img);
+    } else {
+      showHeroImage();
     }
 
     // Reasons cards (Top 10 style)
@@ -1474,7 +1492,7 @@
         img.style.objectFit = 'cover';
         cardImage.appendChild(img);
       } else {
-        cardImage.textContent = memory.emoji;
+        cardImage.textContent = memory.emoji || '📸';
       }
 
       var cardContent = document.createElement('div');
@@ -1518,16 +1536,20 @@
     var celebrateBtn = document.createElement('button');
     celebrateBtn.className = 'btn-celebrate';
     celebrateBtn.onclick = celebrate;
-    celebrateBtn.innerHTML = '<i data-lucide="party-popper" style="width: 14px; height: 14px;"></i> Celebrate';
+    var celebrateIcon = document.createElement('i');
+    celebrateIcon.setAttribute('data-lucide', 'party-popper');
+    celebrateIcon.style.width = '14px';
+    celebrateIcon.style.height = '14px';
+    celebrateBtn.appendChild(celebrateIcon);
+    celebrateBtn.appendChild(document.createTextNode(' Celebrate'));
     document.querySelector('.footer').appendChild(celebrateBtn);
 
     // Initialize Lucide icons
     lucide.createIcons();
 
     // ============ MUSIC PLAYER ============
-    var musicToggle = document.getElementById('musicToggle');
-    var bgMusic = document.getElementById('bgMusic');
-    var isPlaying = false;
+    musicToggle = document.getElementById('musicToggle');
+    bgMusic = document.getElementById('bgMusic');
 
     musicToggle.addEventListener('click', function () {
       if (isPlaying) {
@@ -1572,6 +1594,40 @@
         container.scrollBy({ left: amount, behavior: 'smooth' });
       }
     }
+
+    // ============ NAV SCROLL FIX ============
+    // Fix navigation links to scroll within the fixed .main-screen container
+    document.querySelectorAll('.header-nav a').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        var href = this.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          if (href === '#') {
+            // Scroll to top
+            mainScreen.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            var target = document.querySelector(href);
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        }
+      });
+    });
+
+    // Also fix hero buttons
+    document.querySelectorAll('.hero-buttons a').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        var href = this.getAttribute('href');
+        if (href && href.startsWith('#')) {
+          e.preventDefault();
+          var target = document.querySelector(href);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }
+      });
+    });
   </script>
 </body>
 
